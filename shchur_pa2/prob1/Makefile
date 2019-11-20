@@ -1,7 +1,3 @@
-#
-# Students' Makefile for the Malloc Lab
-#
-
 CC=gcc
 CFLAGS= -Wall -m32 -std=gnu11 -lpthread
 DEPS =
