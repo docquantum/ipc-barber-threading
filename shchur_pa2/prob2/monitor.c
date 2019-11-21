@@ -9,61 +9,93 @@
  * Licenced under GPLv3
  */
 
+#include <stdio.h>
+#include <pthread.h>
+#include <time.h>
 #include "monitor.h"
 
-cond stylistAvailable,  customerAvailable;
-int customer = 0;
-int stylist = 0;
+cond stylistAvailable, customerAvailable;
+sem_t mutex;
+int customerCount = 0;
+int stylistCount = 0;
+int givenHaircuts = 0;
+int salonFull = 0;
+int salonEmpty = 0;
 
 void init_cond(cond* cv){
-    cv->num_of_threads=0;
+    cv->num_blocked_threads=0;
+    sem_init(&(cv->sem), 0, 0);
     sem_init(&(cv->lock), 0, 1);
 }
 
-unsigned int count(cond* cv){
-    return cv->num_of_threads;
+void init_all(){
+    sem_init(&mutex, 0, 1);
+    init_cond(&stylistAvailable);
+    init_cond(&customerAvailable);
 }
 
-void wait(cond* cv){
-    //block
+unsigned int count(cond* cv){
+    return cv->num_blocked_threads;
+}
+
+void wait(cond* cv, sem_t* m){
+    sem_wait(&(cv->lock));
+    cv->num_blocked_threads++;
+    sem_post(m);
+    sem_post(&(cv->lock));
+
+    sem_wait(&(cv->sem));
+    sem_wait(m);
 }
 
 void signal(cond* cv){
-    //signal
+    sem_wait(&(cv->lock));
+    if(count(cv) > 0){
+        cv->num_blocked_threads--;
+        sem_post(&(cv->sem));
+    }
+    sem_post(&(cv->lock));
 }
 
-//add more variables as necessary (e.g. a semaphore for entry queue)
-
 void mon_checkCustomer(){
-    stylist++;
-    
+    sem_wait(&mutex);
+
+    stylistCount++;
+
     signal(&stylistAvailable); // stylist's ready to cut hair
     
-    //do not use while here
-    if (customer == 0)
-        wait(&customerAvailable);
-    
-    customer--;
+    // No customers, stylist sleeping.
+    if (customerCount == 0){
+        salonEmpty++;
+        wait(&customerAvailable, &mutex);
+    }
+
+    customerCount--;
+    givenHaircuts++;
+    sem_post(&mutex);
 }
 
 int mon_checkStylist() {
-    // This function may have faults.
-    // If you think it does, you'll need to fix it
 
+    sem_wait(&mutex);
     int status = 0;
 
-    if(customer < CHAIRS){
-        customer++;
-
+    if(customerCount < CHAIRS){
+        customerCount++;
+        if(customerCount == 7){
+            salonFull++;
+        }
         signal(&customerAvailable);
 
-        if(stylist == 0) // do not use while here
-            wait(&stylistAvailable);
-        
-        stylist--;
+        if(stylistCount == 0){
+            wait(&stylistAvailable, &mutex);
+        }
+            
+        stylistCount--;
 
         status = 1;
     }
+    sem_post(&mutex);
     return status;
 }
 
@@ -71,6 +103,14 @@ int mon_checkStylist() {
  * Print how many customers are waiting
 */
 void mon_debugPrint(void){
+    sem_wait(&mutex);
+    printf("\n");
+    printChairs(customerCount);
+    printf("Given haircuts = %d\n", givenHaircuts);
+    printf("Salon full = %d times\n", salonFull);
+    printf("Salon empty = %d times\n", salonEmpty);
+
+    sem_post(&mutex);
     /** print the state of the waiting char using the following format
      * (the following four lines are the sample output):
      * |1|1|1|0|0|0|0| => 3
@@ -95,4 +135,41 @@ void mon_debugPrint(void){
      * That is, each time the stylist goes to sleep, this counter should
      * go up by 1.
     */
+}
+
+int getGivenHaircuts(){
+    return givenHaircuts;
+}
+
+void printChairs(int chairs){
+    switch (chairs) {
+    case 0:
+        printf("|0|0|0|0|0|0|0| => %d\n", customerCount);
+        break;
+    case 1:
+        printf("|1|0|0|0|0|0|0| => %d\n", customerCount);
+        break;
+    case 2:
+        printf("|1|1|0|0|0|0|0| => %d\n", customerCount);
+        break;
+    case 3:
+        printf("|1|1|1|0|0|0|0| => %d\n", customerCount);
+        break;
+    case 4:
+        printf("|1|1|1|1|0|0|0| => %d\n", customerCount);
+        break;
+    case 5:
+        printf("|1|1|1|1|1|0|0| => %d\n", customerCount);
+        break;
+    case 6:
+        printf("|1|1|1|1|1|1|0| => %d\n", customerCount);
+        break;
+    case 7:
+        printf("|1|1|1|1|1|1|1| => %d\n", customerCount);
+        break;
+    default:
+        printf("|-|-|-|-|-|-|-| => %d -- wait, what?\n", customerCount);
+        break;
+        break;
+    }
 }

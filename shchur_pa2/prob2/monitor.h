@@ -22,9 +22,15 @@
  * threads.
  */
 typedef struct {
-    unsigned int num_of_threads;
+    unsigned int num_blocked_threads;
+    sem_t sem;
     sem_t lock;
 } cond;
+
+/**
+ * Initializes all cv's and semaphores.
+ */ 
+void init_all();
 
 /**
  * Initializes the cv with memory and initial values. 
@@ -40,7 +46,7 @@ unsigned int count(cond* cv);
  * relinquishes exclusive access to the monitor 
  * and then suspends the executing threads.
  */
-void wait(cond* cv);
+void wait(cond* cv, sem_t* m);
 
 /**
  * unblocks one thread suspended at the head of the
@@ -73,3 +79,13 @@ int mon_checkStylist();
  * Print how many customers are waiting
 */
 void mon_debugPrint(void);
+
+/**
+ * Gets the current number of customers served.
+ */
+int getGivenHaircuts();
+
+/**
+ * Prints the waiting room in a cool way
+ */ 
+void printChairs(int chairs);

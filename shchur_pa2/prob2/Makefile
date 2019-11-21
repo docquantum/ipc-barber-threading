@@ -1,12 +1,12 @@
 CC=gcc
-CFLAGS= -Wall -m32 -std=gnu11 -lpthread
+CFLAGS= -Wall -std=gnu11 -lpthread -g
 DEPS = monitor.h
 OBJ = monitor.o
 MAIN = sleepingStylistMon.c
 
 .PHONY: run
 run: clean stylistMon
-	./stylistSem > output.txt
+	./stylistMon > output.txt
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
