@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -m32 -std=gnu11 -lpthread
+CFLAGS= -Wall -std=c11 -lpthread
 DEPS =
 OBJ =
 

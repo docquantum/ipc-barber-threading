@@ -6,7 +6,7 @@
  * 
  * (c) 2019 -- Daniel Shchur
  * 
- * Licenced under GPLv3
+ * Licensed under GPLv3
  */
 
 #include <semaphore.h>
@@ -17,9 +17,15 @@
 #define CHAIRS 7
 
 /**
+ * Sets debug printing on
+ */
+void setDebug();
+
+/**
  * CV implementation structure that keeps track of the
  * number of blocked threads and a semaphore to suspend
- * threads.
+ * threads. Also has an internal mutex to block incrementing
+ * or decrementing the count to one thread at a time.
  */
 typedef struct {
     unsigned int num_blocked_threads;
@@ -43,13 +49,13 @@ void init_cond(cond* cv);
 unsigned int count(cond* cv);
 
 /**
- * relinquishes exclusive access to the monitor 
+ * Relinquishes exclusive access to the monitor 
  * and then suspends the executing threads.
  */
 void wait(cond* cv, sem_t* m);
 
 /**
- * unblocks one thread suspended at the head of the
+ * Unblocks one thread suspended at the head of the
  * cv blocking queue. The signaled thread resumes
  * execution where it was last suspended. The signaler
  * exits the monitor and suspends itself at the entry queue.
@@ -86,6 +92,13 @@ void mon_debugPrint(void);
 int getGivenHaircuts();
 
 /**
- * Prints the waiting room in a cool way
+ * Print the state of the waiting char using
+ * the following format:
+ * 
+ * |1|1|1|0|0|0|0| => 3
+ * Given haircuts = X
+ * Salon full = Y times
+ * Salon empty = Z times
+ * 
  */ 
 void printChairs(int chairs);

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -std=gnu11 -lpthread -g
+CFLAGS= -Wall -std=c11 -lpthread
 DEPS = monitor.h
 OBJ = monitor.o
 MAIN = sleepingStylistMon.c

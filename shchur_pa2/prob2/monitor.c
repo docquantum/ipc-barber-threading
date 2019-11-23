@@ -6,26 +6,29 @@
  * 
  * (c) 2019 -- Daniel Shchur
  * 
- * Licenced under GPLv3
+ * Licensed under GPLv3
  */
 
 #include <stdio.h>
-#include <pthread.h>
-#include <time.h>
 #include "monitor.h"
 
 cond stylistAvailable, customerAvailable;
 sem_t mutex;
+unsigned short debug = 0;
 int customerCount = 0;
 int stylistCount = 0;
 int givenHaircuts = 0;
 int salonFull = 0;
 int salonEmpty = 0;
 
+void setDebug(){
+    debug = 1;
+}
+
 void init_cond(cond* cv){
     cv->num_blocked_threads=0;
-    sem_init(&(cv->sem), 0, 0);
-    sem_init(&(cv->lock), 0, 1);
+    sem_init(&(cv->sem), 0, 0); //Counting
+    sem_init(&(cv->lock), 0, 1);//Mutex
 }
 
 void init_all(){
@@ -39,62 +42,102 @@ unsigned int count(cond* cv){
 }
 
 void wait(cond* cv, sem_t* m){
+
+    // Lock
     sem_wait(&(cv->lock));
+    // Increment num of blocked threads
     cv->num_blocked_threads++;
+    // Relinquish access to other threads (assumes mutex is locked)
     sem_post(m);
+    // Unlock
     sem_post(&(cv->lock));
 
+    // Put thread to sleep
     sem_wait(&(cv->sem));
+
+    // Regain access after thread is woken
     sem_wait(m);
 }
 
 void signal(cond* cv){
+    // Lock
     sem_wait(&(cv->lock));
+    // Only wake thread if there are threads
     if(count(cv) > 0){
+        // Wake a thread
         cv->num_blocked_threads--;
         sem_post(&(cv->sem));
     }
+    // Unlock
     sem_post(&(cv->lock));
 }
 
 void mon_checkCustomer(){
+    // Lock
     sem_wait(&mutex);
 
+    // Stylist is ready
     stylistCount++;
 
-    signal(&stylistAvailable); // stylist's ready to cut hair
+    // Stylist is ready to cut hair
+    signal(&stylistAvailable);
     
     // No customers, stylist sleeping.
     if (customerCount == 0){
+        if(debug){
+            printf("\n\tNo customers, stylist sleeping...\n\n");
+        }
+        
         salonEmpty++;
         wait(&customerAvailable, &mutex);
+        if(debug){
+            printf("\n\tStylist woken...\n\n");
+        }
     }
 
+    // Remove customer
     customerCount--;
+    // Haircut will be given...
     givenHaircuts++;
+    // Unlock
     sem_post(&mutex);
 }
 
 int mon_checkStylist() {
-
+    // Lock
     sem_wait(&mutex);
+
     int status = 0;
 
+    // Only wait if there are chairs
     if(customerCount < CHAIRS){
         customerCount++;
         if(customerCount == 7){
             salonFull++;
         }
+
+        // Signal that customer is available
+        if(debug){
+            printf("\n\tCustomer arrived...\n\n");
+        }
         signal(&customerAvailable);
 
         if(stylistCount == 0){
+            if(debug){
+                printf("\n\tStylist busy, customer waiting for stylist\n\n");
+            } 
             wait(&stylistAvailable, &mutex);
+            if(debug){
+                printf("\n\tCustomer getting haircut...\n\n");
+            }
         }
-            
+        
+        // "busy" the stylist
         stylistCount--;
 
         status = 1;
     }
+    // Unlock
     sem_post(&mutex);
     return status;
 }
@@ -103,38 +146,15 @@ int mon_checkStylist() {
  * Print how many customers are waiting
 */
 void mon_debugPrint(void){
+    // Lock
     sem_wait(&mutex);
     printf("\n");
     printChairs(customerCount);
     printf("Given haircuts = %d\n", givenHaircuts);
     printf("Salon full = %d times\n", salonFull);
     printf("Salon empty = %d times\n", salonEmpty);
-
+    // Unlock
     sem_post(&mutex);
-    /** print the state of the waiting char using the following format
-     * (the following four lines are the sample output):
-     * |1|1|1|0|0|0|0| => 3
-     * Given haircuts = X
-     * Salon full = Y times
-     * Salon empty = Z times
-     * 
-     * Below is the explanation of each line.
-     * 
-     * Line 1: For each slot, - indicates that the chair is available
-     * and 1 indicates that the chair is occupied.
-     * 
-     * The value after => indicates the number of occupied chairs.
-     * 
-     * Line 2: X = number of completed haircuts.
-     * 
-     * Line 3: Y = number of times that all waiting chairs are full.
-     * That is, each time the number of occupied chairs increases to 7,
-     * this counter should go up by 7.
-     * 
-     * Line 4: Z = the number of times that the stylist goes to sleep.
-     * That is, each time the stylist goes to sleep, this counter should
-     * go up by 1.
-    */
 }
 
 int getGivenHaircuts(){
@@ -169,7 +189,6 @@ void printChairs(int chairs){
         break;
     default:
         printf("|-|-|-|-|-|-|-| => %d -- wait, what?\n", customerCount);
-        break;
         break;
     }
 }

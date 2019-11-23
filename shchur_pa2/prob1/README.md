@@ -1,13 +1,27 @@
 
 Daniel Shchur
 
-In the directory, simply running `make` will both compile and run the code. The code will output to `output.txt`.
+In the directory, simply running `make` will both compile and run the code.
+The code will output to `output.txt`.
 
-If you would like to run it without redirection, that can be done by calling the program: `./stylistSem` after having run `make`
+If you would like to run it without redirection, that can be done by calling
+the program: `./stylistSem` after having run `make`
 
-It prints to stdout every time the stylist goes back to check on the queue and when he grabs a customer, as well as when a customer goes shopping.
-The stylist will print out the seat from which the customer is being taken and then after finishing with the customer, will also print how many customers have been completed.
+The customer's shopping times vary since their delay is multiplied by a random
+number. This allows for varied full/empty times. This means every run has
+a different result and running the program a few times to get a better overall
+sample is recommended.
 
-This problem took me around 3 hours more or less to complete, aside from printing tweaks here and there and delays to get the right response with waiting.
+The stylist prints to stdout when there are no customers, if there are none,
+that he goes to sleep, and when he grabs a customer with how many are left.
+The customer prints when they go shopping (with thread ID) and when they
+arrive with what seat they take. The stylist will also print how many customers
+have been served and how many times the shop was full and empty.
 
-I would rate it at a 3 for difficulty. It was a 2 after brushing up on documentation, examples, and notes and deciding to use the semaphore library instead of making my own semaphores and P(), V() functions.
+This problem took me around 3 hours more or less to complete, aside from
+printing tweaks here and there and delays to get the right response with
+waiting.
+
+I would rate it at a 3 for difficulty. It was a 2 after brushing up on
+documentation, examples, and notes and deciding to use the semaphore
+library instead of making my own semaphores and P(), V() functions.

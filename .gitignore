@@ -1,3 +1,5 @@
 .vscode/*
 *.o
-run
+*.txt
+stylistSem
+stylistMon
