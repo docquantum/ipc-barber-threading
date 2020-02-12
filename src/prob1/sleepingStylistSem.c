@@ -66,14 +66,14 @@ int main(void){
         }
     }
     
-    for(int i=0; i<CUSTOMERS; i++){
-        pthread_join(customer_thread[i], NULL);
-        //printf("Joined customer %lu-%d...\n", customer_thread[i],i+1);
-    }
-    printf("\nClosed all customer threads\n");
+    // for(int i=0; i<CUSTOMERS; i++){
+    //     pthread_join(customer_thread[i], NULL);
+    //     //printf("Joined customer %lu-%d...\n", customer_thread[i],i+1);
+    // }
+    // printf("\nClosed all customer threads\n");
 
-    pthread_join(stylist_thread, NULL);
-    printf("Closed stylist thread\n");
+    // pthread_join(stylist_thread, NULL);
+    //printf("Closed stylist thread\n");
 
     return 0;
 }
